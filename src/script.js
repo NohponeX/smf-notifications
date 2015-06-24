@@ -2,10 +2,15 @@
 // @name        smf-notifications
 // @namespace   nohponex
 // @description  'Live' notifications in-browser notifications for smf bulletin boards
-// @include     https://www.thmmy.gr/smf/*
+// @include     https://www.thmmy.gr/smf/
+// @include     https://www.thmmy.gr/smf/index.php*
 // @exclude     https://www.thmmy.gr/smf/*;wap
 // @exclude     https://www.thmmy.gr/smf/*;wap2
-// @exclude     https://www.thmmy.gr/smf/index.php?action=admin*
+// @exclude     https://www.thmmy.gr/smf/*action=admin*
+// @exclude     https://www.thmmy.gr/smf/*action=tpmod*
+// @exclude     https://www.thmmy.gr/smf/*;imode*
+// @exclude     https://www.thmmy.gr/smf/FCKeditor*
+// @exclude     https://www.thmmy.gr/smf/*action=printpage*
 // @version     1
 // @grant       none
 // ==/UserScript==
@@ -14,7 +19,6 @@
   var FORUM_BASE = 'https://www.thmmy.gr/smf/';
   var NOTIFICATION_BUTTON;
   var initialize = function () {
-    console.log('initialize');
      //setInterval(req, 10000);
     setTimeout(req, 1000);
     
@@ -39,7 +43,7 @@ box-sizing: border-box; \
 } \
 .smf_button:hover{ \
 box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.15) inset, 0px 0px 6px rgba(0, 0, 0, 0.2) inset; \
-color: rgb(28, 184, 65); \
+color: #333; \
   } \
 .badge1[data-badge]:after { \
    content:attr(data-badge); \
@@ -56,7 +60,7 @@ color: rgb(28, 184, 65); \
    box-shadow:0 0 1px #333; \
   } \
 #notifications_panel{ \
-  position: absolute;  \
+  position: fixed;  \
 top: 45px;  \
 right: 0px;  \
 width: 300px;  \
@@ -73,9 +77,11 @@ overflow-x: hidden; \
   } \
 #notifications_panel h3{ \
 display:inline-block; \
-margin: 3px 0; \
-  } \
+font-size:12pt; \
+margin: 2px 1px; \
+} \
 #notifications_panel .close{ \
+font-size: 10pt; \
 cursor: pointer; \
 position: absolute; \
     right: 5px; \
@@ -136,6 +142,7 @@ padding: 0px; \
       posts.push({'text': text, 'href': href});
       
       NOTIFICATION_LIST.insertAdjacentHTML('beforeend', '<li><a href="' + href +'">' + text + '</a></li>');
+      //new notifications have active class or something
     });
     //initialize button from localstorage
 
@@ -163,6 +170,4 @@ padding: 0px; \
   };
   initialize();
 }) ();
-
-console.log('script');
 
