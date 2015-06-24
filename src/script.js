@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        smf-notifications
 // @namespace   nohponex
-// @description  'Live' notifications in-browser notifications for smf bulletin boards
+// @description  'Live' notifications in-browser notifications for thmmy.gr
 // @include     https://www.thmmy.gr/smf/
 // @include     https://www.thmmy.gr/smf/index.php*
 // @exclude     https://www.thmmy.gr/smf/*;wap
@@ -13,25 +13,29 @@
 // @exclude     https://www.thmmy.gr/smf/*action=printpage*
 // @version     1
 // @grant       none
+// @noframes
 // ==/UserScript==
 
 (function () {
   var FORUM_BASE = 'https://www.thmmy.gr/smf/';
   var NOTIFICATION_BUTTON;
+  
+  var last = [];
+  //Initialize after some minutes
   var initialize = function () {
-     //setInterval(req, 10000);
-    setTimeout(req, 1000);
+    //setInterval(req, 60000);
+    setTimeout(req, 10000);
     
     var css = '#smf_notifications{ z-index=-2; position: fixed; right:10px; top:10px; display:block; /* width:48px; height:48px; background-color:red;*/ } \
 .badge1 { \
-   position:relative; \
+position:relative; \
 } \
 .smf_button{ \
 font-size: 14pt; \
 color: white; \
-            border-radius: 4px; \
-            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2); \
-        background: rgb(223, 117, 20); \
+border-radius: 4px; \
+text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2); \
+background: rgb(223, 117, 20); \
 display: inline-block;  \
 line-height: normal; \
 white-space: nowrap; \
@@ -43,7 +47,7 @@ box-sizing: border-box; \
 } \
 .smf_button:hover{ \
 box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.15) inset, 0px 0px 6px rgba(0, 0, 0, 0.2) inset; \
-color: #333; \
+color: #111; \
   } \
 .badge1[data-badge]:after { \
    content:attr(data-badge); \
@@ -64,7 +68,7 @@ color: #333; \
 top: 45px;  \
 right: 0px;  \
 width: 300px;  \
-box-shadow: 2px 2px 3px #7A7A7A;  \
+box-shadow: 3px 3px 4px #7A7A7A;  \
 background-color: #FFF;  \
 border: 1px solid #CCC;  \
 border-radius: 5px;  \
@@ -88,6 +92,7 @@ position: absolute; \
     top: 2px; \
 margin: 0px; \
 padding: 0px; \
+border:none; \
 } \
 #notifications_panel> ul, #notifications_panel > ul li{ \
   list-style: outside none none; \
@@ -97,17 +102,20 @@ padding: 0px; \
 #notifications_panel > ul li{ \
   border-top: 1px solid #CCC; \
 } \
+#notifications_panel > ul li.active{ \
+background-color: #C2FFE0; \
+} \
 .hidden { \
     display: none; \
 }';
     var head = document.getElementsByTagName('head')[0];
-    var s = document.createElement('style')
+    var s = document.createElement('style');
     s.appendChild(document.createTextNode(css));
     head.appendChild(s);
     
     var body = document.getElementsByTagName('body')[0];
-    body.insertAdjacentHTML('beforeend', '<div id="smf_notifications" ><button type="button" class="smf_button badge1" data-badge="0" title="New replies to your posts">⚑</button></div> \
-<div id="notifications_panel" class="hidden"><h3>New replies to your posts</h3><button type="button" class="smf_button close">✖</button><ul></ul></div>' );
+    body.insertAdjacentHTML('beforeend', '<div id="smf_notifications" ><button type="smf_button" class="smf_button badge1" data-badge="0" title="New replies to your posts">⚑</button></div> \
+<div id="notifications_panel" class="hidden"><h3>New replies to your posts</h3><button type="button" class="close">✖</button><ul></ul></div>' );
     
     NOTIFICATION_BUTTON = body.querySelector('#smf_notifications > .badge1');
     NOTIFICATION_PANEL = body.querySelector('#notifications_panel');
@@ -119,9 +127,11 @@ padding: 0px; \
         NOTIFICATION_PANEL.className = 'hidden';
       };
     });
+    last = cache.get('last') || [];
     
-    NOTIFICATION_BUTTON.onclick = function(){
-      console.log('onclick');
+    NOTIFICATION_BUTTON.setAttribute('data-badge', last.length);
+    
+    NOTIFICATION_BUTTON.onclick = function() {
       var hidden = NOTIFICATION_PANEL.classList.contains('hidden');
       if(hidden){
         NOTIFICATION_PANEL.className = '';
@@ -129,7 +139,6 @@ padding: 0px; \
         NOTIFICATION_PANEL.className = 'hidden';
       }
     };
-    
   };
   var parse_posts = function (doc) {
     x = doc;
@@ -137,17 +146,25 @@ padding: 0px; \
     
     var posts = [];
     [].forEach.call(post_el, function (item, i) {
-      var href = item.getAttribute('href');
+      var href = item.getAttribute('href').toString().replace(';imode', '');
       var text = item.innerHTML.trim();
-      posts.push({'text': text, 'href': href});
       
-      NOTIFICATION_LIST.insertAdjacentHTML('beforeend', '<li><a href="' + href +'">' + text + '</a></li>');
+      var matches = href.match(/topic\=(\d+)\.msg(\d+)/);
+      if(matches){
+       var postId = matches[2];
+      }
+      posts.push({'text': text, 'href': href, 'postId' : postId});
+      
+      itemClass = (i%2 ? 'active': '');
+      NOTIFICATION_LIST.insertAdjacentHTML('beforeend', '<li class="' + itemClass + '"><a href="' + href +'">' + text + '</a></li>');
       //new notifications have active class or something
     });
     //initialize button from localstorage
 
     NOTIFICATION_BUTTON.setAttribute('data-badge', posts.length);
-    
+    var postIds = posts.map(function(x) { return x.postId; });
+    console.log(postIds);
+    cache.set('last', postIds);
     return posts;
   };
   var req = function () {
@@ -168,6 +185,39 @@ padding: 0px; \
     };
     request.send();
   };
-  initialize();
+  var cache = {
+    prefix: 'smf-notifications',
+    set: function(key, value, permanent) {
+     
+      if (typeof (Storage) === 'undefined') {
+        return null;
+      }
+      permanent = typeof (permanent) !== 'undefined' ? permanent : false;
+
+      value = JSON.stringify(value);
+
+      var engine = (permanent ? localStorage : sessionStorage);
+
+      return engine.setItem(cache.prefix + key, value);
+   },
+   get: function(key) {
+     if (typeof (Storage) === 'undefined') {
+       return null;
+     }
+     key = cache.prefix + key;
+   
+     var result = localStorage.getItem(key);
+        
+     if (result) {
+
+       return JSON.parse(result);
+     }
+     //Try sessionStorage
+     result = sessionStorage.getItem(key);
+     
+     return JSON.parse(result);
+   }
+  };
+  setTimeout(initialize, 01000);
 }) ();
 
