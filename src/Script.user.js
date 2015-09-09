@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        smf-notifications
-// @namespace   nohponex
+// @namespace   https://github.com/NohponeX/smf-notifications
 // @description  'Live' notifications in-browser notifications for forum thmmy.gr
 // @include     https://www.thmmy.gr/smf/
 // @include     https://www.thmmy.gr/smf/index.php*
