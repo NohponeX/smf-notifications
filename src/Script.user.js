@@ -23,8 +23,10 @@
   var last = [];
   //Initialize after some minutes
   var initialize = function() {
-    //setInterval(req, 60000);
-    //setTimeout(req, 10000);
+    //update each
+    setInterval(req, 60000);
+    //start in
+    setTimeout(req, 10000);
 
     var css =
       '#smf_notifications{ z-index=-2; position: fixed; right:10px; top:10px; display:block; /* width:48px; height:48px; background-color:red;*/ } \
