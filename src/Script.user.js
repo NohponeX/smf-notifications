@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        smf-notifications
 // @namespace   nohponex
-// @description  'Live' notifications in-browser notifications for thmmy.gr
+// @description  'Live' notifications in-browser notifications for forum thmmy.gr
 // @include     https://www.thmmy.gr/smf/
 // @include     https://www.thmmy.gr/smf/index.php*
 // @exclude     https://www.thmmy.gr/smf/*;wap
@@ -16,17 +16,18 @@
 // @noframes
 // ==/UserScript==
 
-(function () {
+(function() {
   var FORUM_BASE = 'https://www.thmmy.gr/smf/';
   var NOTIFICATION_BUTTON;
-  
+
   var last = [];
   //Initialize after some minutes
-  var initialize = function () {
+  var initialize = function() {
     //setInterval(req, 60000);
-    setTimeout(req, 10000);
-    
-    var css = '#smf_notifications{ z-index=-2; position: fixed; right:10px; top:10px; display:block; /* width:48px; height:48px; background-color:red;*/ } \
+    //setTimeout(req, 10000);
+
+    var css =
+      '#smf_notifications{ z-index=-2; position: fixed; right:10px; top:10px; display:block; /* width:48px; height:48px; background-color:red;*/ } \
 .badge1 { \
 position:relative; \
 } \
@@ -112,75 +113,88 @@ background-color: #C2FFE0; \
     var s = document.createElement('style');
     s.appendChild(document.createTextNode(css));
     head.appendChild(s);
-    
+
     var body = document.getElementsByTagName('body')[0];
-    body.insertAdjacentHTML('beforeend', '<div id="smf_notifications" ><button type="smf_button" class="smf_button badge1" data-badge="0" title="New replies to your posts">⚑</button></div> \
-<div id="notifications_panel" class="hidden"><h3>New replies to your posts</h3><button type="button" class="close">✖</button><ul></ul></div>' );
-    
+    body.insertAdjacentHTML('beforeend',
+      '<div id="smf_notifications" ><button type="smf_button" class="smf_button badge1" data-badge="0" title="New replies to your posts">⚑</button></div> \
+<div id="notifications_panel" class="hidden"><h3>New replies to your posts</h3><button type="button" class="close">✖</button><ul></ul></div>'
+    );
+
     NOTIFICATION_BUTTON = body.querySelector('#smf_notifications > .badge1');
     NOTIFICATION_PANEL = body.querySelector('#notifications_panel');
     NOTIFICATION_LIST = body.querySelector('#notifications_panel > ul');
-    
-    close_buttons = body.querySelectorAll('#notifications_panel .close');
-    [].forEach.call(close_buttons, function (item, i) {
-      item.onclick = function(){
+
+    closeButtons = body.querySelectorAll('#notifications_panel .close');
+    [].forEach.call(closeButtons, function(item, i) {
+      item.onclick = function() {
         NOTIFICATION_PANEL.className = 'hidden';
       };
     });
     last = cache.get('last') || [];
-    
+
     NOTIFICATION_BUTTON.setAttribute('data-badge', last.length);
-    
+
     NOTIFICATION_BUTTON.onclick = function() {
       var hidden = NOTIFICATION_PANEL.classList.contains('hidden');
-      if(hidden){
+      if (hidden) {
         NOTIFICATION_PANEL.className = '';
-      }else{
+      } else {
         NOTIFICATION_PANEL.className = 'hidden';
       }
     };
   };
-  var parse_posts = function (doc) {
+  var parsePosts = function(doc) {
     x = doc;
-    var post_el = doc.querySelectorAll('body #recent p>a[href^="' + FORUM_BASE + 'index.php?topic="]');
-    
+    var postEl = doc.querySelectorAll('body #recent p>a[href^="' +
+      FORUM_BASE + 'index.php?topic="]');
+
     var posts = [];
-    [].forEach.call(post_el, function (item, i) {
-      var href = item.getAttribute('href').toString().replace(';imode', '');
+    [].forEach.call(postEl, function(item, i) {
+      var href = item.getAttribute('href').toString().replace(';imode',
+        '');
       var text = item.innerHTML.trim();
-      
+
       var matches = href.match(/topic\=(\d+)\.msg(\d+)/);
-      if(matches){
-       var postId = matches[2];
+      if (matches) {
+        var postId = matches[2];
       }
-      posts.push({'text': text, 'href': href, 'postId' : postId});
-      
-      itemClass = (i%2 ? 'active': '');
-      NOTIFICATION_LIST.insertAdjacentHTML('beforeend', '<li class="' + itemClass + '"><a href="' + href +'">' + text + '</a></li>');
+      posts.push({
+        'text': text,
+        'href': href,
+        'postId': postId
+      });
+
+      itemClass = (i % 2 ? 'active' : '');
+      NOTIFICATION_LIST.insertAdjacentHTML('beforeend', '<li class="' +
+        itemClass + '"><a href="' + href + '">' + text + '</a></li>');
       //new notifications have active class or something
     });
     //initialize button from localstorage
 
     NOTIFICATION_BUTTON.setAttribute('data-badge', posts.length);
-    var postIds = posts.map(function(x) { return x.postId; });
+    var postIds = posts.map(function(x) {
+      return x.postId;
+    });
     console.log(postIds);
     cache.set('last', postIds);
     return posts;
   };
-  var req = function () {
+  var req = function() {
     console.log('request');
     var request = new XMLHttpRequest();
-    request.open('GET', FORUM_BASE + 'index.php?action=unreadreplies;wap', true);
-    request.onload = function () {
+    request.open('GET', FORUM_BASE + 'index.php?action=unreadreplies;wap',
+      true);
+    request.onload = function() {
       if (request.status >= 200 && request.status < 400) {
         var parser = new DOMParser();
-        var doc = parser.parseFromString(request.responseText, 'text/html');
-        
-        var posts = parse_posts(doc);
+        var doc = parser.parseFromString(request.responseText,
+          'text/html');
+
+        var posts = parsePosts(doc);
         console.table(posts);
       }
     };
-    request.onerror = function () {
+    request.onerror = function() {
       console.error('error');
     };
     request.send();
@@ -188,36 +202,35 @@ background-color: #C2FFE0; \
   var cache = {
     prefix: 'smf-notifications',
     set: function(key, value, permanent) {
-     
-      if (typeof (Storage) === 'undefined') {
+
+      if (typeof(Storage) === 'undefined') {
         return null;
       }
-      permanent = typeof (permanent) !== 'undefined' ? permanent : false;
+      permanent = typeof(permanent) !== 'undefined' ? permanent : false;
 
       value = JSON.stringify(value);
 
       var engine = (permanent ? localStorage : sessionStorage);
 
       return engine.setItem(cache.prefix + key, value);
-   },
-   get: function(key) {
-     if (typeof (Storage) === 'undefined') {
-       return null;
-     }
-     key = cache.prefix + key;
-   
-     var result = localStorage.getItem(key);
-        
-     if (result) {
+    },
+    get: function(key) {
+      if (typeof(Storage) === 'undefined') {
+        return null;
+      }
+      key = cache.prefix + key;
 
-       return JSON.parse(result);
-     }
-     //Try sessionStorage
-     result = sessionStorage.getItem(key);
-     
-     return JSON.parse(result);
-   }
+      var result = localStorage.getItem(key);
+
+      if (result) {
+
+        return JSON.parse(result);
+      }
+      //Try sessionStorage
+      result = sessionStorage.getItem(key);
+
+      return JSON.parse(result);
+    }
   };
   setTimeout(initialize, 01000);
-}) ();
-
+})();
